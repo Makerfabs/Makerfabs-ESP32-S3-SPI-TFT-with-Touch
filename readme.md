@@ -1,4 +1,4 @@
-# Makerfabs ESP32-S3 SOI TFT with Touch
+# Makerfabs ESP32-S3 SPI TFT with Touch
 
 ```c++
 /*
@@ -27,7 +27,7 @@ Product Link ：[]()
 
 Wiki Link : []()
 
-The 3.5" 320x480 TFT LCD driver is ILI9488, it uses 16bits parallel line for communication with ESP32-S3, the main clock could be up to 20MHz, make the display smooth enough for videos; You can freely use some of Mabee pins(A I2c and a IOs) with the breakout connectors, to connect the ESP32-S3 display with sensors/ actuators, suitable for IoT applications.
+The 3.5" 320x480 TFT LCD driver is ILI9488, it uses SPI line for communication with ESP32-S3. You can freely use some of GPIO, to connect the ESP32-S3 display with sensors/ actuators, suitable for IoT applications.
 
 ![back](md_pic/back.jpg)
 
