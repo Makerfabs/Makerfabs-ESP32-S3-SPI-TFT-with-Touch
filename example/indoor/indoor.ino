@@ -6,6 +6,8 @@
 #include <SPI.h>
 #include <SD.h>
 #include <FS.h>
+#include "Adafruit_SGP30.h"
+#include "DHT.h"
 
 #include "FT6236.h"
 const int i2c_touch_addr = TOUCH_I2C_ADD;
@@ -26,6 +28,21 @@ const int i2c_touch_addr = TOUCH_I2C_ADD;
 #define SD_MISO 41
 #define SD_SCK 42
 #define SD_CS 1
+
+#define DHTPIN 5 // Digital pin connected to the DHT sensor
+#define BUZZPIN 7
+#define LDO_PWR_EN_PIN 4 // AP2112K enable pin
+
+#define BUZZER_ON digitalWrite(BUZZPIN, HIGH)
+#define BUZZER_OFF digitalWrite(BUZZPIN, LOW)
+
+#define LDO_1V8_ON digitalWrite(LDO_PWR_EN_PIN, HIGH)
+#define LDO_1V8_OFF digitalWrite(LDO_PWR_EN_PIN, LOW)
+
+#define DHTTYPE DHT11 // DHT11
+
+DHT dht(DHTPIN, DHTTYPE);
+Adafruit_SGP30 sgp;
 
 class LGFX : public lgfx::LGFX_Device
 {
@@ -91,8 +108,14 @@ public:
 };
 
 LGFX lcd;
-
 SPIClass SD_SPI;
+
+// Global value
+int eco2 = 0;
+int tvoc = 0;
+int counter = 0;
+float humidity = 0;
+float temperature = 0;
 
 void setup(void)
 {
@@ -104,62 +127,23 @@ void setup(void)
     lcd.setTextSize(3);
 
     sd_init();
+
+    Wire.begin(I2C_SDA, I2C_SCL);
     touch_init();
+    sensor_init();
 
-    lcd.fillRect(80, 160, 160, 160, TFT_BLACK);
-    lcd.setCursor(90, 180);
-    lcd.println(" TOUCH");
-    lcd.setCursor(90, 210);
-    lcd.println("  TO");
-    lcd.setCursor(90, 240);
-    lcd.println("CONTINUE");
+    touch_check();
 
-    int pos[2] = {0, 0};
-
-    while (1)
-    {
-        get_pos(pos);
-
-        if (pos[0] > 80 && pos[0] < 240 && pos[1] > 160 && pos[1] < 320)
-            break;
-        delay(100);
-    }
+    lcd.setRotation(1);
+    print_img(SD, "/logo.bmp", 480, 320);
+    delay(1000);
 }
-
-static int colors[] = {TFT_RED, TFT_GREEN, TFT_BLUE, TFT_YELLOW};
-
-int i = 0;
 
 void loop(void)
 {
-    /*
-    // fps
-    static int prev_sec;
-    static int fps;
-    ++fps;
-    int sec = millis() / 1000;
-    if (prev_sec != sec)
-    {
-        prev_sec = sec;
-        lcd.setCursor(0, 440);
-        lcd.setTextSize(4);
-        lcd.printf("fps:%03d", fps);
-        fps = 0;
-    }
-
-    lcd.fillRect(0, 0, 320, 440, colors[i++]);
-    */
-
-    lcd.fillScreen(colors[i++]);
-    delay(1000);
-
-    if (i > 3)
-    {
-        i = 0;
-        lcd.setRotation(3);
-        print_img(SD, "/logo.bmp", 480, 320);
-        delay(1000);
-    }
+    co2_level_measure();
+    display();
+    delay(2000);
 }
 
 void sd_init()
@@ -179,57 +163,10 @@ void sd_init()
     }
 
     Serial.println("SD init over.");
-
-    /*
-
-    uint8_t cardType = SD.cardType();
-
-    Serial.print("SD Card Type: ");
-    if (cardType == CARD_NONE)
-    {
-        Serial.println("No SD card attached");
-    }
-    else if (cardType == CARD_MMC)
-    {
-        Serial.println("MMC");
-    }
-    else if (cardType == CARD_SD)
-    {
-        Serial.println("SDSC");
-    }
-    else if (cardType == CARD_SDHC)
-    {
-        Serial.println("SDHC");
-    }
-    else
-    {
-        Serial.println("UNKNOWN");
-    }
-
-    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-    Serial.printf("SD Card Size: %lluMB\n", cardSize);
-
-    listDir(SD, "/", 0);
-    createDir(SD, "/mydir");
-    listDir(SD, "/", 0);
-    removeDir(SD, "/mydir");
-    listDir(SD, "/", 2);
-    writeFile(SD, "/hello.txt", "Hello ");
-    appendFile(SD, "/hello.txt", "World!\n");
-    readFile(SD, "/hello.txt");
-    deleteFile(SD, "/foo.txt");
-    renameFile(SD, "/hello.txt", "/foo.txt");
-    readFile(SD, "/foo.txt");
-    testFileIO(SD, "/test.txt");
-    Serial.printf("Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
-    Serial.printf("Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
-    */
 }
 
 void touch_init()
 {
-    // I2C init
-    Wire.begin(I2C_SDA, I2C_SCL);
     byte error, address;
 
     Wire.beginTransmission(i2c_touch_addr);
@@ -248,6 +185,42 @@ void touch_init()
         lcd.setCursor(10, 40);
         lcd.println("Touch Failed");
     }
+}
+
+void touch_check()
+{
+    lcd.setRotation(3);
+    lcd.fillRect(160, 80, 160, 160, TFT_BLACK);
+    lcd.setCursor(170, 100);
+    lcd.println(" TOUCH");
+    lcd.setCursor(170, 130);
+    lcd.println("  TO");
+    lcd.setCursor(170, 160);
+    lcd.println("CONTINUE");
+
+    int pos[2] = {0, 0};
+
+    while (1)
+    {
+        get_pos(pos);
+
+        if (pos[0] > 80 && pos[0] < 240 && pos[1] > 160 && pos[1] < 320)
+            break;
+        delay(100);
+    }
+}
+
+void sensor_init()
+{
+    if (!sgp.begin())
+    {
+
+        Serial.println("SGP320 not found");
+        lcd.setCursor(10, 70);
+        lcd.println("SGP320 not found");
+    }
+
+    dht.begin();
 }
 
 // Display image from file
@@ -278,205 +251,97 @@ int print_img(fs::FS &fs, String filename, int x, int y)
     return 0;
 }
 
-// SD test
-
-void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
+// Display
+void display()
 {
-    Serial.printf("Listing directory: %s\n", dirname);
+    String temp;
 
-    File root = fs.open(dirname);
-    if (!root)
+    lcd.setRotation(3);
+    lcd.fillScreen(TFT_WHITE);
+    lcd.setTextColor(TFT_BLACK);
+
+    temp = "";
+    temp = temp + "humidity " + humidity;
+    lcd.setCursor(10, 10);
+    lcd.println(temp);
+
+    temp = "";
+    temp = temp + "temperature " + temperature;
+    lcd.setCursor(10, 40);
+    lcd.println(temp);
+
+    temp = "";
+    temp = temp + "tvoc " + tvoc;
+    lcd.setCursor(10, 70);
+    lcd.println(temp);
+
+    temp = "";
+    temp = temp + "eco2 " + eco2;
+    lcd.setCursor(10, 100);
+    lcd.println(temp);
+}
+
+// Sensor
+void co2_level_measure()
+{
+    humidity = dht.readHumidity();
+    temperature = dht.readTemperature();
+
+    Serial.print("humidity=");
+    Serial.println(humidity);
+    Serial.print("temperature=");
+    Serial.println(temperature);
+
+    sgp.setHumidity(getAbsoluteHumidity(temperature, humidity));
+
+    if (!sgp.IAQmeasure())
     {
-        Serial.println("Failed to open directory");
+        Serial.println("Measurement failed");
         return;
     }
-    if (!root.isDirectory())
+    Serial.print("TVOC ");
+    Serial.print(sgp.TVOC);
+    Serial.print(" ppb\t");
+    Serial.print("eCO2 ");
+    Serial.print(sgp.eCO2);
+    Serial.println(" ppm");
+    eco2 = sgp.eCO2;
+    tvoc = sgp.TVOC;
+
+    if (!sgp.IAQmeasureRaw())
     {
-        Serial.println("Not a directory");
+        Serial.println("Raw Measurement failed");
         return;
     }
-
-    File file = root.openNextFile();
-    while (file)
+    Serial.print("Raw H2 ");
+    Serial.print(sgp.rawH2);
+    Serial.print(" \t");
+    Serial.print("Raw Ethanol ");
+    Serial.print(sgp.rawEthanol);
+    Serial.println("");
+    counter++;
+    delay(500);
+    if (counter == 30)
     {
-        if (file.isDirectory())
+        counter = 0;
+
+        uint16_t TVOC_base, eCO2_base;
+        if (!sgp.getIAQBaseline(&eCO2_base, &TVOC_base))
         {
-            Serial.print("  DIR : ");
-            Serial.println(file.name());
-            if (levels)
-            {
-                listDir(fs, file.name(), levels - 1);
-            }
+            Serial.println("Failed to get baseline readings");
+            return;
         }
-        else
-        {
-            Serial.print("  FILE: ");
-            Serial.print(file.name());
-            Serial.print("  SIZE: ");
-            Serial.println(file.size());
-        }
-        file = root.openNextFile();
+        Serial.print("****Baseline values: eCO2: 0x");
+        Serial.print(eCO2_base, HEX);
+        Serial.print(" & TVOC: 0x");
+        Serial.println(TVOC_base, HEX);
     }
 }
 
-void createDir(fs::FS &fs, const char *path)
+uint32_t getAbsoluteHumidity(float temperature, float humidity)
 {
-    Serial.printf("Creating Dir: %s\n", path);
-    if (fs.mkdir(path))
-    {
-        Serial.println("Dir created");
-    }
-    else
-    {
-        Serial.println("mkdir failed");
-    }
-}
-
-void removeDir(fs::FS &fs, const char *path)
-{
-    Serial.printf("Removing Dir: %s\n", path);
-    if (fs.rmdir(path))
-    {
-        Serial.println("Dir removed");
-    }
-    else
-    {
-        Serial.println("rmdir failed");
-    }
-}
-
-void readFile(fs::FS &fs, const char *path)
-{
-    Serial.printf("Reading file: %s\n", path);
-
-    File file = fs.open(path);
-    if (!file)
-    {
-        Serial.println("Failed to open file for reading");
-        return;
-    }
-
-    Serial.print("Read from file: ");
-    while (file.available())
-    {
-        Serial.write(file.read());
-    }
-    file.close();
-}
-
-void writeFile(fs::FS &fs, const char *path, const char *message)
-{
-    Serial.printf("Writing file: %s\n", path);
-
-    File file = fs.open(path, FILE_WRITE);
-    if (!file)
-    {
-        Serial.println("Failed to open file for writing");
-        return;
-    }
-    if (file.print(message))
-    {
-        Serial.println("File written");
-    }
-    else
-    {
-        Serial.println("Write failed");
-    }
-    file.close();
-}
-
-void appendFile(fs::FS &fs, const char *path, const char *message)
-{
-    Serial.printf("Appending to file: %s\n", path);
-
-    File file = fs.open(path, FILE_APPEND);
-    if (!file)
-    {
-        Serial.println("Failed to open file for appending");
-        return;
-    }
-    if (file.print(message))
-    {
-        Serial.println("Message appended");
-    }
-    else
-    {
-        Serial.println("Append failed");
-    }
-    file.close();
-}
-
-void renameFile(fs::FS &fs, const char *path1, const char *path2)
-{
-    Serial.printf("Renaming file %s to %s\n", path1, path2);
-    if (fs.rename(path1, path2))
-    {
-        Serial.println("File renamed");
-    }
-    else
-    {
-        Serial.println("Rename failed");
-    }
-}
-
-void deleteFile(fs::FS &fs, const char *path)
-{
-    Serial.printf("Deleting file: %s\n", path);
-    if (fs.remove(path))
-    {
-        Serial.println("File deleted");
-    }
-    else
-    {
-        Serial.println("Delete failed");
-    }
-}
-
-void testFileIO(fs::FS &fs, const char *path)
-{
-    File file = fs.open(path);
-    static uint8_t buf[512];
-    size_t len = 0;
-    uint32_t start = millis();
-    uint32_t end = start;
-    if (file)
-    {
-        len = file.size();
-        size_t flen = len;
-        start = millis();
-        while (len)
-        {
-            size_t toRead = len;
-            if (toRead > 512)
-            {
-                toRead = 512;
-            }
-            file.read(buf, toRead);
-            len -= toRead;
-        }
-        end = millis() - start;
-        Serial.printf("%u bytes read for %u ms\n", flen, end);
-        file.close();
-    }
-    else
-    {
-        Serial.println("Failed to open file for reading");
-    }
-
-    file = fs.open(path, FILE_WRITE);
-    if (!file)
-    {
-        Serial.println("Failed to open file for writing");
-        return;
-    }
-
-    size_t i;
-    start = millis();
-    for (i = 0; i < 2048; i++)
-    {
-        file.write(buf, 512);
-    }
-    end = millis() - start;
-    Serial.printf("%u bytes written for %u ms\n", 2048 * 512, end);
-    file.close();
+    // approximation formula from Sensirion SGP30 Driver Integration chapter 3.15
+    const float absoluteHumidity = 216.7f * ((humidity / 100.0f) * 6.112f * exp((17.62f * temperature) / (243.12f + temperature)) / (273.15f + temperature)); // [g/m^3]
+    const uint32_t absoluteHumidityScaled = static_cast<uint32_t>(1000.0f * absoluteHumidity);                                                                // [mg/m^3]
+    return absoluteHumidityScaled;
 }
