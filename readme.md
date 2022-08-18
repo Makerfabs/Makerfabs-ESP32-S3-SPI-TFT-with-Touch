@@ -2,11 +2,11 @@
 
 ```c++
 /*
-Version:		V1.0
+Version:		V1.1
 Author:			Vincent
 Create Date:	2022/7/13
 Note:
-	
+			2022/8/18	V1.1: Add two demo.
 */
 ```
 ![](md_pic/main.jpg)
@@ -69,3 +69,19 @@ The 3.5" 320x480 TFT LCD driver is ILI9488, it uses SPI line for communication w
 ### S3_9488
 
 A simple test procedure. Touch the black area in the middle of the screen, and the screen starts showing solid colors in turn. Finally, an SD card image is displayed.
+
+
+
+## Example
+
+### image_display.ino
+
+The BMP image of the SD card is displayed.
+
+
+
+### indoor
+
+[ESP32 Touch_Indoor Environment Expansion](https://www.makerfabs.com/esp32-touch-indoor-environment-expansion.html)
+
+Test air temperature, humidity, and TVOC values with extension plate.
