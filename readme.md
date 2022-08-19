@@ -2,11 +2,12 @@
 
 ```c++
 /*
-Version:		V1.1
+Version:		V1.2
 Author:			Vincent
 Create Date:	2022/7/13
 Note:
 			2022/8/18	V1.1: Add two demo.
+			2022/8/19	V1.2: Add hardware file.
 */
 ```
 ![](md_pic/main.jpg)

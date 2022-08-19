@@ -103,6 +103,16 @@ int i = 0;
 
 void loop(void)
 {
+    lcd.fillScreen(TFT_BLUE);
+    delay(1000);
+    lcd.fillScreen(TFT_RED);
+    delay(1000);
+    lcd.fillScreen(TFT_GREEN);
+    delay(1000);
+    lcd.fillScreen(TFT_YELLOW);
+    delay(1000);
+    lcd.fillScreen(TFT_WHITE);
+    delay(1000);
 
     print_img(SD, "/1.bmp", 480, 320);
     delay(3000);
