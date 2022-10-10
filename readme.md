@@ -2,12 +2,14 @@
 
 ```c++
 /*
-Version:		V1.2
+Version:		V1.3
 Author:			Vincent
 Create Date:	2022/7/13
 Note:
-			2022/8/18	V1.1: Add two demo.
+			2022/10/10	V1.3: Add Touch Keyboard demo and Back Light demo.
 			2022/8/19	V1.2: Add hardware file.
+			2022/8/18	V1.1: Add two demo.
+			
 */
 ```
 ![](md_pic/main.jpg)
@@ -86,3 +88,17 @@ The BMP image of the SD card is displayed.
 [ESP32 Touch_Indoor Environment Expansion](https://www.makerfabs.com/esp32-touch-indoor-environment-expansion.html)
 
 Test air temperature, humidity, and TVOC values with extension plate.
+
+
+
+### Touch Keyboard
+
+Added an inherited three custom keyboard keyboard Demo, including text input + key combination, numeric keypad, arrow keys + space.
+
+
+
+### Back Light
+
+Periodically adjust the brightness of the backlight
+
+ 
