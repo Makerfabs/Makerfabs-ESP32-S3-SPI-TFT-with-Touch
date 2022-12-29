@@ -2,10 +2,11 @@
 
 ```c++
 /*
-Version:		V1.3
+Version:		V1.4
 Author:			Vincent
 Create Date:	2022/7/13
 Note:
+			2022/12/29	V1.4: Change wiki link
 			2022/10/10	V1.3: Add Touch Keyboard demo and Back Light demo.
 			2022/8/19	V1.2: Add hardware file.
 			2022/8/18	V1.1: Add two demo.
@@ -21,14 +22,14 @@ Note:
 
 [Makerfabs home page](https://www.makerfabs.com/)
 
-[Makerfabs Wiki](https://makerfabs.com/wiki/index.php?title=Main_Page)
+[Makerfabs Wiki](https://wiki.makerfabs.com/)
 
 # Makerfabs ESP32-S3 SPI TFT with Touch
 ## Intruduce
 
 Product Link ：[ESP32-S3 SPI TFT with Touch 3.5'' ILI9488](https://www.makerfabs.com/esp32-s3-spi-tft-with-touch-ili9488.html)
 
-Wiki Link : []()
+Wiki Link : [ESP32-S3 SPI 3.5" TFT with Touch](https://wiki.makerfabs.com/ESP32_S3_SPI_3.5_TFT_with_Touch.html)
 
 The 3.5" 320x480 TFT LCD driver is ILI9488, it uses SPI line for communication with ESP32-S3. You can freely use some of GPIO, to connect the ESP32-S3 display with sensors/ actuators, suitable for IoT applications.
 
