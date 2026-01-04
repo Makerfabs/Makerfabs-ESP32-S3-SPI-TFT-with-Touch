@@ -61,7 +61,7 @@ static void release_task(void *arg)
 
 - template_lvgl_demos_test: Examples included with LVGL.
 
-  ![lvgl_widgets](https://easyimage.linwanrong.com/i/2025/11/20/tsgq0b-0.gif)
+  ![ezgif.com-optimize](https://easyimage.linwanrong.com/i/2026/01/04/hab40y-0.gif)
 
 #### Makerfabs-ESP32-S3-Parallel-TFT-with-Touch
 
@@ -88,7 +88,7 @@ static void release_task(void *arg)
 
 - template_lvgl_demos_test: Examples included with LVGL.
 
-  ![lvgl_widgets](https://easyimage.linwanrong.com/i/2025/11/20/tsgq0b-0.gif)
+  ![ezgif.com-optimize](https://easyimage.linwanrong.com/i/2026/01/04/hab40y-0.gif)
 
 ## Example Note
 
